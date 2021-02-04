@@ -1,0 +1,112 @@
+USE WAREHOUSE SQL_TEST;
+USE DATABASE SQL_TEST;
+
+USE SCHEMA SQL_TEST.AIRBNB_DATA;
+
+SELECT * FROM CALENDAR;
+SELECT * FROM LISTINGS;
+SELECT * FROM NEIGHBOURHOODS;
+SELECT * FROM REVIEWS;
+
+
+-- Question 2 -- What is the average number of reviews per listing?
+
+SELECT DISTINCT LISTING_ID, COUNT(LISTING_ID) 
+FROM REVIEWS
+GROUP BY LISTING_ID; -- number of reviews per listing
+
+SELECT COUNT(DISTINCT LISTING_ID) as total_unique_listings, COUNT(DISTINCT ID) as total_reviews,  COUNT(DISTINCT ID) / COUNT(DISTINCT LISTING_ID) as average_reviews_per_listing
+FROM REVIEWS; -- using distinct ID in case the reviewer name repeats or the same reviewer has reviewed two different listings, but perhaps it is the same as COUNT(REVIEWER_ID)
+
+-- check the LISTINGS table as it might be better to use this instead
+
+
+
+-- Question 3 -- What is the average review length of the 2nd review of each reviewer with at least 2 reviews?
+
+SELECT REVIEWER_ID, COUNT(REVIEWS.REVIEWER_ID)
+FROM REVIEWS
+GROUP BY REVIEWS.REVIEWER_ID
+HAVING COUNT(REVIEWS.REVIEWER_ID) > 1; -- all the reviewers with at least two reviews
+
+SELECT REVIEWS.REVIEWER_ID, REVIEWS.DATE, LEN(COMMENTS)
+FROM REVIEWS
+ORDER BY REVIEWS.REVIEWER_ID, DATE ASC; -- this query orders by REVIEWER_ID then by date
+
+-- need to combine the previous two
+
+SELECT REVIEWS.REVIEWER_ID, REVIEWS.DATE, LEN(REVIEWS.COMMENTS)
+FROM REVIEWS
+WHERE REVIEWS.REVIEWER_ID IN (
+  SELECT REVIEWER_ID
+  FROM REVIEWS
+  GROUP BY REVIEWS.REVIEWER_ID
+  HAVING COUNT(REVIEWER_ID) > 1
+)                                     -- all the reviewers with >1 review and the date of the review in ascending order
+ORDER BY REVIEWER_ID, DATE ASC;       -- so now need to find the 2nd review of each reviewer
+
+SELECT *
+FROM (
+  SELECT REVIEWS.REVIEWER_ID, REVIEWS.DATE, LEN(REVIEWS.COMMENTS)
+  FROM REVIEWS
+  WHERE REVIEWS.REVIEWER_ID IN (
+    SELECT REVIEWER_ID
+    FROM REVIEWS
+    GROUP BY REVIEWS.REVIEWER_ID
+    HAVING COUNT(REVIEWER_ID) > 1
+  )                                     -- all the reviewers with >1 review and the date of the review in ascending order
+  ORDER BY REVIEWER_ID, DATE ASC
+);
+
+
+
+SELECT REVIEWER_ID, DATE, LEN(COMMENTS)
+FROM (
+  SELECT REVIEWER_ID, DATE, COMMENTS,
+    ROW_NUMBER() OVER (PARTITION BY REVIEWER_ID ORDER BY DATE ASC) row_num
+  FROM (
+    SELECT REVIEWER_ID, DATE, COMMENTS
+    FROM REVIEWS
+    WHERE REVIEWER_ID IN (
+      SELECT REVIEWER_ID
+      FROM REVIEWS
+      GROUP BY REVIEWER_ID
+      HAVING COUNT(REVIEWER_ID) > 1
+    )                                     
+    ORDER BY REVIEWER_ID, DATE ASC
+  )
+) t
+WHERE row_num = 2;             -- gets the second review of each reviewer with >1 review with the comment length, now just need to get the average
+
+---
+
+
+
+SELECT SUM(length) / COUNT(REVIEWER_ID) as average_review_length
+FROM(
+  SELECT REVIEWER_ID, DATE, LEN(COMMENTS) as length
+  FROM (
+    SELECT REVIEWER_ID, DATE, COMMENTS,
+      ROW_NUMBER() OVER (PARTITION BY REVIEWER_ID ORDER BY DATE ASC) row_num
+    FROM (
+      SELECT REVIEWER_ID, DATE, COMMENTS
+      FROM REVIEWS
+      WHERE REVIEWER_ID IN (
+        SELECT REVIEWER_ID
+        FROM REVIEWS
+        GROUP BY REVIEWER_ID
+        HAVING COUNT(REVIEWER_ID) > 1
+      )                                     
+      ORDER BY REVIEWER_ID, DATE ASC
+    )
+  ) t
+  WHERE row_num = 2
+);                      -- insert finally meme here
+
+-- SELECT * FROM REVIEWS WHERE REVIEWER_ID = 124025905; -- check to see if number of reviews has been queried correctly
+
+-- WHERE COUNT(REVIEWER_ID) > 1; -- check if this counts ALL characters
+
+
+
+-- Question 4 -- Do hosts with more listings have better reviews?
