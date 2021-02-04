@@ -15,7 +15,7 @@ SELECT DISTINCT LISTING_ID, COUNT(LISTING_ID)
 FROM REVIEWS
 GROUP BY LISTING_ID; -- number of reviews per listing
 
-SELECT COUNT(DISTINCT LISTING_ID) as total_unique_listings, COUNT(DISTINCT ID) as total_reviews,  COUNT(DISTINCT ID) / COUNT(DISTINCT LISTING_ID) as average_reviews_per_listing
+SELECT COUNT(DISTINCT LISTING_ID) as total_unique_listings, COUNT(DISTINCT ID) as total_reviews, COUNT(DISTINCT ID) / COUNT(DISTINCT LISTING_ID) as average_reviews_per_listing
 FROM REVIEWS; -- using distinct ID in case the reviewer name repeats or the same reviewer has reviewed two different listings, but perhaps it is the same as COUNT(REVIEWER_ID)
 
 -- check the LISTINGS table as it might be better to use this instead
@@ -80,9 +80,7 @@ WHERE row_num = 2;             -- gets the second review of each reviewer with >
 
 ---
 
-
-
-SELECT SUM(length) / COUNT(REVIEWER_ID) as average_review_length
+SELECT SUM(length) / COUNT(REVIEWER_ID) as average_second_review_length_for_reviewers_with_at_least_two_reviews
 FROM(
   SELECT REVIEWER_ID, DATE, LEN(COMMENTS) as length
   FROM (
@@ -110,3 +108,21 @@ FROM(
 
 
 -- Question 4 -- Do hosts with more listings have better reviews?
+
+SELECT HOST_NAME, HOST_LISTINGS_COUNT, REVIEW_SCORES_RATING FROM LISTINGS
+WHERE HOST_NAME IS NOT NULL
+ORDER BY HOST_LISTINGS_COUNT DESC;
+
+SELECT HOST_NAME, MAX(HOST_LISTINGS_COUNT), AVG(REVIEW_SCORES_RATING)
+FROM LISTINGS
+WHERE HOST_NAME IS NOT NULL
+GROUP BY HOST_NAME
+ORDER BY MAX(HOST_LISTINGS_COUNT) DESC;
+
+
+-- Question 5 -- 
+
+SELECT PRICE, WEEKLY_PRICE, MONTHLY_PRICE, SECURITY_DEPOSIT, CLEANING_FEE, REVIEW_SCORES_RATING, NUMBER_OF_REVIEWS
+FROM LISTINGS
+WHERE MARKET LIKE '%Amsterdam%' AND COUNTRY_CODE = 'NL' AND HAS_AVAILABILITY = 't'
+ORDER BY NUMBER_OF_REVIEWS DESC;
