@@ -34,7 +34,7 @@ def second(a,b):
     return
 
 df = pd.read_csv(
-    r'C:\Users\Jamie\Documents\Employment\Company Prep\Kleene.ai\Q4_Kleene.csv'
+    r'[file directory goes here]\Q4_Kleene.csv'
     , delimiter = ',', header=None, 
     names = ['host_name', 'total_listings', 'avg_review_score'], 
     usecols = [0,1,2], skiprows=1)
